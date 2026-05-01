@@ -1,0 +1,3 @@
+cloud_access_policy_token = "<your-grafana-cloud-access-policy-token>"
+stack_slug                = "<your-stack-slug>"
+environment               = "production"

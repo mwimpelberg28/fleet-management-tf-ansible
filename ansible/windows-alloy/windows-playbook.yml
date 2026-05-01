@@ -1,0 +1,55 @@
+# Replicates script.ps1: downloads Grafana Cloud's official Windows
+# Alloy installer and runs it with Fleet Management remotecfg params.
+# Then overwrites the installer-generated config.alloy with our own template.
+- name: Install Grafana Alloy on Windows via Grafana Cloud installer
+  hosts: windows
+  gather_facts: true
+
+  vars_files:
+    - vars/main.yml
+    - vars/secrets.yml
+
+  vars:
+    installer_url: "https://storage.googleapis.com/cloud-onboarding/alloy/scripts/install-windows.ps1"
+    installer_path: 'C:\Windows\Temp\install-windows.ps1'
+    alloy_config_file: 'C:\ProgramData\GrafanaLabs\Alloy\config.alloy'
+
+  tasks:
+    - name: Download Grafana Cloud Alloy Windows installer
+      ansible.windows.win_get_url:
+        url: "{{ installer_url }}"
+        dest: "{{ installer_path }}"
+        force: true
+
+    - name: Run Alloy installer with Fleet Management parameters
+      ansible.windows.win_shell: |
+        powershell -ExecutionPolicy Bypass -File "{{ installer_path }}" `
+          -GCLOUD_RW_API_KEY "{{ gcloud_rw_api_key }}" `
+          -GCLOUD_HOSTED_METRICS_ID "{{ gcloud_hosted_metrics_id }}" `
+          -GCLOUD_HOSTED_METRICS_URL "{{ gcloud_hosted_metrics_url }}" `
+          -GCLOUD_HOSTED_LOGS_ID "{{ gcloud_hosted_logs_id }}" `
+          -GCLOUD_HOSTED_LOGS_URL "{{ gcloud_hosted_logs_url }}" `
+          -GCLOUD_FM_URL "{{ gcloud_fm_url }}" `
+          -GCLOUD_FM_POLL_FREQUENCY "{{ gcloud_fm_poll_frequency }}" `
+          -GCLOUD_FM_HOSTED_ID "{{ gcloud_fm_hosted_id }}"
+      register: installer_result
+      changed_when: installer_result.rc == 0
+      no_log: true
+
+    - name: Deploy custom Alloy configuration (overrides installer-generated config)
+      ansible.windows.win_template:
+        src: templates/config.alloy.j2
+        dest: "{{ alloy_config_file }}"
+      notify: Restart Alloy
+
+    - name: Ensure Alloy service is running and set to auto-start
+      ansible.windows.win_service:
+        name: Alloy
+        start_mode: auto
+        state: started
+
+  handlers:
+    - name: Restart Alloy
+      ansible.windows.win_service:
+        name: Alloy
+        state: restarted

@@ -1,0 +1,24 @@
+# Grafana Cloud Metrics
+gcloud_hosted_metrics_id: "<your-metrics-instance-id>"
+gcloud_hosted_metrics_url: "https://prometheus-prod-XX-prod-us-east-0.grafana.net/api/prom/push"
+
+# Grafana Cloud Logs
+gcloud_hosted_logs_id: "<your-logs-instance-id>"
+gcloud_hosted_logs_url: "https://logs-prod-XXX.grafana.net/loki/api/v1/push"
+
+# Fleet Management
+gcloud_fm_url: "https://fleet-management-prod-XXX.grafana.net"
+gcloud_fm_poll_frequency: "60s"
+gcloud_fm_hosted_id: "<your-fleet-management-instance-id>"
+
+# Architecture
+arch: "amd64"
+
+# API Key — store this in Ansible Vault in production
+# Run: ansible-vault encrypt vars/secrets.yml
+gcloud_rw_api_key: "{{ vault_gcloud_rw_api_key }}"
+
+# Alloy config
+alloy_config_dir: /etc/alloy
+alloy_config_file: /etc/alloy/config.alloy
+alloy_env_file: /etc/alloy/alloy.env

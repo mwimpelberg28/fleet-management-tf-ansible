@@ -1,0 +1,17 @@
+remotecfg {
+  url = "{{ gcloud_fm_url }}"
+
+  id = constants.hostname
+
+  attributes = {
+    "env"  = "{{ alloy_env | default('production') }}",
+    "host" = constants.hostname,
+  }
+
+  poll_frequency = "{{ gcloud_fm_poll_frequency }}"
+
+  basic_auth {
+    username = "{{ gcloud_fm_hosted_id }}"
+    password = sys.env("GCLOUD_RW_API_KEY")
+  }
+}

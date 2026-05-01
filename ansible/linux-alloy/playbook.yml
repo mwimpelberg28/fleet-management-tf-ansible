@@ -1,0 +1,120 @@
+---
+- name: Install and configure Grafana Alloy with Fleet Management remotecfg
+  hosts: alloy_servers
+  become: true
+
+  vars_files:
+    - vars/main.yml
+    - vars/secrets.yml
+
+  tasks:
+
+    # ── 1. Install prerequisites ───────────────────────────────────────────
+    - name: Install prerequisite packages
+      apt:
+        name:
+          - apt-transport-https
+          - software-properties-common
+          - wget
+          - gpg
+          - curl
+        state: present
+        update_cache: true
+
+    # ── 2. Add Grafana APT repository ──────────────────────────────────────
+    - name: Create keyrings directory
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+
+    - name: Download Grafana GPG key
+      get_url:
+        url: https://apt.grafana.com/gpg.key
+        dest: /tmp/grafana.gpg.key
+        mode: '0644'
+
+    - name: Dearmor and install Grafana GPG key
+      shell: |
+        gpg --dearmor < /tmp/grafana.gpg.key > /etc/apt/keyrings/grafana.gpg
+      args:
+        creates: /etc/apt/keyrings/grafana.gpg
+
+    - name: Add Grafana APT repository
+      apt_repository:
+        repo: "deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://apt.grafana.com stable main"
+        state: present
+        filename: grafana
+
+    # ── 3. Install Grafana Alloy ───────────────────────────────────────────
+    - name: Install Grafana Alloy
+      apt:
+        name: alloy
+        state: present
+        update_cache: true
+
+    # ── 4. Create config directory ─────────────────────────────────────────
+    - name: Ensure Alloy config directory exists
+      file:
+        path: "{{ alloy_config_dir }}"
+        state: directory
+        owner: alloy
+        group: alloy
+        mode: '0750'
+
+    # ── 5. Deploy environment file ─────────────────────────────────────────
+    - name: Deploy Alloy environment file
+      template:
+        src: templates/alloy.env.j2
+        dest: "{{ alloy_env_file }}"
+        owner: alloy
+        group: alloy
+        mode: '0640'
+      notify: Restart Alloy
+
+    # ── 6. Deploy Alloy remotecfg config ───────────────────────────────────
+    - name: Deploy Alloy remotecfg configuration
+      template:
+        src: templates/config.alloy.j2
+        dest: "{{ alloy_config_file }}"
+        owner: alloy
+        group: alloy
+        mode: '0640'
+      notify: Restart Alloy
+
+    # ── 7. Configure systemd override ─────────────────────────────────────
+    - name: Ensure systemd override directory exists
+      file:
+        path: /etc/systemd/system/alloy.service.d
+        state: directory
+        mode: '0755'
+
+    - name: Deploy systemd override to set config path and env file
+      copy:
+        dest: /etc/systemd/system/alloy.service.d/override.conf
+        content: |
+          [Service]
+          EnvironmentFile={{ alloy_env_file }}
+          ExecStart=
+          ExecStart=/usr/bin/alloy run --storage.path=/var/lib/alloy/data {{ alloy_config_file }}
+        mode: '0644'
+      notify:
+        - Reload systemd
+        - Restart Alloy
+
+    # ── 8. Enable and start Alloy ──────────────────────────────────────────
+    - name: Enable and start Alloy service
+      systemd:
+        name: alloy
+        enabled: true
+        state: started
+
+  handlers:
+    - name: Reload systemd
+      systemd:
+        daemon_reload: true
+
+    - name: Restart Alloy
+      systemd:
+        name: alloy
+        state: restarted
