@@ -1,2 +1,5 @@
 [alloy_servers]
-10.0.156.148
+# Replace with the IP/hostname of each Linux host that should run Alloy.
+# Example:
+# 10.0.0.10
+# linux-host.example.com ansible_user=ubuntu

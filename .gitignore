@@ -1,6 +1,11 @@
 secrets.yml
 **/vars/main.yml
 
+# Local inventory / connection files — copy from the tracked
+# placeholder, fill in real values, and let git ignore the result.
+ansible/**/inventory.local
+ansible/**/windows.local.ini
+
 # Terraform
 .terraform/
 *.tfstate
