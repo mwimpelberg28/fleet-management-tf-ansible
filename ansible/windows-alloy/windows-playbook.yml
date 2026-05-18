@@ -12,7 +12,7 @@
   vars:
     installer_url: "https://storage.googleapis.com/cloud-onboarding/alloy/scripts/install-windows.ps1"
     installer_path: 'C:\Windows\Temp\install-windows.ps1'
-    alloy_config_file: 'C:\ProgramData\GrafanaLabs\Alloy\config.alloy'
+    alloy_config_file: 'C:\Program Files\GrafanaLabs\Alloy\config.alloy'
 
   tasks:
     - name: Download Grafana Cloud Alloy Windows installer
