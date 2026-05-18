@@ -10,7 +10,7 @@
   tasks:
 
     # ── 1. Install prerequisites ───────────────────────────────────────────
-    - name: Install prerequisite packages
+    - name: Install prerequisite packages (Debian/Ubuntu)
       apt:
         name:
           - apt-transport-https
@@ -20,38 +20,76 @@
           - curl
         state: present
         update_cache: true
+      when: ansible_os_family == "Debian"
 
-    # ── 2. Add Grafana APT repository ──────────────────────────────────────
-    - name: Create keyrings directory
+    - name: Install prerequisite packages (RedHat/Amazon Linux)
+      dnf:
+        name:
+          - wget
+          - gnupg2
+          - curl
+        state: present
+      when: ansible_os_family == "RedHat"
+
+    # ── 2. Add Grafana repository ──────────────────────────────────────────
+    - name: Create keyrings directory (Debian/Ubuntu)
       file:
         path: /etc/apt/keyrings
         state: directory
         mode: '0755'
+      when: ansible_os_family == "Debian"
 
-    - name: Download Grafana GPG key
+    - name: Download Grafana APT GPG key (Debian/Ubuntu)
       get_url:
         url: https://apt.grafana.com/gpg.key
         dest: /tmp/grafana.gpg.key
         mode: '0644'
+      when: ansible_os_family == "Debian"
 
-    - name: Dearmor and install Grafana GPG key
+    - name: Dearmor and install Grafana GPG key (Debian/Ubuntu)
       shell: |
         gpg --dearmor < /tmp/grafana.gpg.key > /etc/apt/keyrings/grafana.gpg
       args:
         creates: /etc/apt/keyrings/grafana.gpg
+      when: ansible_os_family == "Debian"
 
-    - name: Add Grafana APT repository
+    - name: Add Grafana APT repository (Debian/Ubuntu)
       apt_repository:
         repo: "deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://apt.grafana.com stable main"
         state: present
         filename: grafana
+      when: ansible_os_family == "Debian"
+
+    - name: Import Grafana RPM GPG key (RedHat/Amazon Linux)
+      rpm_key:
+        key: https://rpm.grafana.com/gpg.key
+        state: present
+      when: ansible_os_family == "RedHat"
+
+    - name: Add Grafana YUM repository (RedHat/Amazon Linux)
+      yum_repository:
+        name: grafana
+        description: grafana
+        baseurl: https://rpm.grafana.com
+        gpgcheck: true
+        gpgkey: https://rpm.grafana.com/gpg.key
+        repo_gpgcheck: true
+        enabled: true
+      when: ansible_os_family == "RedHat"
 
     # ── 3. Install Grafana Alloy ───────────────────────────────────────────
-    - name: Install Grafana Alloy
+    - name: Install Grafana Alloy (Debian/Ubuntu)
       apt:
         name: alloy
         state: present
         update_cache: true
+      when: ansible_os_family == "Debian"
+
+    - name: Install Grafana Alloy (RedHat/Amazon Linux)
+      dnf:
+        name: alloy
+        state: present
+      when: ansible_os_family == "RedHat"
 
     # ── 4. Create config directory ─────────────────────────────────────────
     - name: Ensure Alloy config directory exists
