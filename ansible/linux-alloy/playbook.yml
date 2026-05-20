@@ -16,8 +16,6 @@
           - apt-transport-https
           - software-properties-common
           - wget
-          - gpg
-          - curl
         state: present
         update_cache: true
       when: ansible_os_family == "Debian"
