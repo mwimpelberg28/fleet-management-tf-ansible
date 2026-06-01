@@ -24,8 +24,6 @@
       dnf:
         name:
           - wget
-          - gnupg2
-          - curl
         state: present
       when: ansible_os_family == "RedHat"
 
